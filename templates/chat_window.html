@@ -1,1 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Онлайн Чат</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --panel: #121826;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --green: #10b981;
+      --danger: #ef4444;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body, html {
+      height: 100%;
+      width: 100%;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .popup-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    .popup-header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--green);
+    }
+
+    .user-tag {
+      color: #818cf8;
+      font-size: 12px;
+    }
+
+    .btn-quit {
+      background: none;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--danger);
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .auth-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(11, 15, 25, 0.98);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .auth-input {
+      background: #111827;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .auth-input:focus {
+      border-color: var(--accent);
+    }
+
+    .auth-btn-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .btn-auth {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-sec {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--border);
+    }
+
+    .popup-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .popup-body::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .popup-body::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+    }
+
+    .msg-item {
+      max-width: 85%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      word-break: break-word;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      align-self: flex-start;
+    }
+
+    .msg-item.admin {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25));
+      border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+
+    .msg-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 2px;
+      font-size: 11px;
+    }
+
+    .msg-user {
+      font-weight: 700;
+      color: #818cf8;
+    }
+
+    .msg-item.admin .msg-user {
+      color: #fbbf24;
+    }
+
+    .msg-time {
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .msg-image {
+      max-width: 100%;
+      border-radius: 6px;
+      margin-top: 6px;
+      display: block;
+    }
+
+    .msg-sys {
+      align-self: center;
+      font-size: 10px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .popup-input-area {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-box {
+      flex: 1;
+      background: #111827;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: #fff;
+      outline: none;
+      font-size: 13px;
+    }
+
+    .input-box:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-send {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="popup-wrapper">
+    <div class="auth-overlay" id="popup-auth-modal" style="display: none;">
+      <div class="auth-box">
+        <div style="font-size: 16px; font-weight: 700;">Вход в чат</div>
+        <input type="text" id="p-username" class="auth-input" placeholder="Логин (ник)">
+        <input type="password" id="p-password" class="auth-input" placeholder="Пароль">
+        <div id="p-error" style="color: var(--danger); font-size: 11px; display: none;"></div>
+        <div class="auth-btn-row">
+          <button type="button" class="btn-auth btn-primary" onclick="submitPopupAuth('login')">Войти</button>
+          <button type="button" class="btn-auth btn-sec" onclick="submitPopupAuth('register')">Регистрация</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-header">
+      <div class="status-left">
+        <span class="live-dot"></span>
+        <span>Чат</span>
+        <span class="user-tag" id="p-user-label"></span>
+      </div>
+      <button type="button" class="btn-quit" id="p-quit-btn" onclick="logoutPopupChat()">Выйти</button>
+    </div>
+
+    <div class="popup-body" id="messages-box"></div>
+
+    <form class="popup-input-area" id="chat-form">
+      <input type="file" id="file-uploader" accept="image/*" style="display: none;">
+      <button type="button" onclick="document.getElementById('file-uploader').click()" style="background:none; border:none; font-size:16px; cursor:pointer;">📷</button>
+      <input type="text" class="input-box" id="msg-input" placeholder="Сообщение... (Ctrl+V фото)" autocomplete="off">
+      <button type="submit" class="btn-send">➤</button>
+    </form>
+  </div>
+
+  <script>
+    let ws = null;
+    let attachedImg = "";
+    const box = document.getElementById("messages-box");
+    const input = document.getElementById("msg-input");
+    const modal = document.getElementById("popup-auth-modal");
+    const uLabel = document.getElementById("p-user-label");
+
+    function checkAuth() {
+      const token = localStorage.getItem("chat_token");
+      const user = localStorage.getItem("chat_username");
+      if (!token || !user) {
+        modal.style.display = "flex";
+        uLabel.textContent = "";
+        if (ws) ws.close();
+      } else {
+        modal.style.display = "none";
+        uLabel.textContent = `(${user})`;
+        connectWS(token);
+      }
+    }
+
+    async function submitPopupAuth(mode) {
+      const u = document.getElementById("p-username").value.trim();
+      const p = document.getElementById("p-password").value.trim();
+      const err = document.getElementById("p-error");
+      err.style.display = "none";
+      if (!u || !p) {
+        err.textContent = "Заполните логин и пароль";
+        err.style.display = "block";
+        return;
+      }
+      try {
+        const res = await fetch(`/api/chat/${mode}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const d = await res.json();
+        if (!res.ok) {
+          err.textContent = d.detail || "Ошибка";
+          err.style.display = "block";
+          return;
+        }
+        localStorage.setItem("chat_token", d.token);
+        localStorage.setItem("chat_username", d.username);
+        checkAuth();
+      } catch (e) {
+        err.textContent = "Сетевая ошибка";
+        err.style.display = "block";
+      }
+    }
+
+    function logoutPopupChat() {
+      localStorage.removeItem("chat_token");
+      localStorage.removeItem("chat_username");
+      checkAuth();
+    }
+
+    function connectWS(token) {
+      if (ws) ws.close();
+      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${proto}//${window.location.host}/ws/chat`);
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ token: token, admin_key: "" }));
+      };
+
+      ws.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === "error") {
+          logoutPopupChat();
+        } else if (data.type === "history") {
+          box.innerHTML = "";
+          data.messages.forEach(m => renderMessage(m));
+          box.scrollTop = box.scrollHeight;
+        } else if (data.type === "chat_message") {
+          renderMessage(data);
+          box.scrollTop = box.scrollHeight;
+        } else if (data.type === "system") {
+          const sys = document.createElement("div");
+          sys.className = "msg-sys";
+          sys.textContent = data.text;
+          box.appendChild(sys);
+          box.scrollTop = box.scrollHeight;
+        }
+      };
+    }
+
+    function renderMessage(msg) {
+      const el = document.createElement("div");
+      el.className = "msg-item" + (msg.is_admin ? " admin" : "");
+
+      const top = document.createElement("div");
+      top.className = "msg-top";
+
+      const user = document.createElement("span");
+      user.className = "msg-user";
+      user.textContent = msg.is_admin ? "👑 Администратор" : msg.username;
+      top.appendChild(user);
+
+      if (msg.time_str) {
+        const time = document.createElement("span");
+        time.className = "msg-time";
+        time.textContent = msg.time_str;
+        top.appendChild(time);
+      }
+      el.appendChild(top);
+
+      if (msg.text) {
+        const txt = document.createElement("div");
+        txt.textContent = msg.text;
+        el.appendChild(txt);
+      }
+
+      if (msg.image_url) {
+        const img = document.createElement("img");
+        img.src = msg.image_url;
+        img.className = "msg-image";
+        el.appendChild(img);
+      }
+
+      box.appendChild(el);
+    }
+
+    document.getElementById("chat-form").onsubmit = (e) => {
+      e.preventDefault();
+      const val = input.value.trim();
+      if (!val && !attachedImg) return;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ text: val, image_url: attachedImg }));
+        input.value = "";
+        attachedImg = "";
+      }
+    };
+
+    checkAuth();
+  </script>
+</body>
+</html>
